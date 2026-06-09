@@ -1,0 +1,715 @@
+openapi: 3.1.0
+info:
+  title: Api
+  version: 0.1.0
+  description: Varecvsce Game API
+servers:
+  - url: /api
+tags:
+  - name: health
+  - name: auth
+  - name: friends
+  - name: chat
+  - name: groups
+  - name: channels
+  - name: rewards
+
+paths:
+  /healthz:
+    get:
+      operationId: healthCheck
+      tags: [health]
+      responses:
+        "200":
+          description: Healthy
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/HealthStatus"
+
+  /auth/register:
+    post:
+      operationId: register
+      tags: [auth]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/AuthCredentials"
+      responses:
+        "201":
+          description: Created
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AuthUser"
+        "409":
+          description: Conflict
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AuthError"
+        "400":
+          description: Bad request
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AuthError"
+
+  /auth/login:
+    post:
+      operationId: login
+      tags: [auth]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/AuthCredentials"
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AuthUser"
+        "401":
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AuthError"
+
+  /auth/logout:
+    post:
+      operationId: logout
+      tags: [auth]
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AuthMessage"
+
+  /auth/me:
+    get:
+      operationId: getMe
+      tags: [auth]
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AuthUser"
+        "401":
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AuthError"
+
+  /friends:
+    get:
+      operationId: getFriends
+      tags: [friends]
+      summary: Get my friends list
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Friend"
+
+  /friends/requests:
+    get:
+      operationId: getFriendRequests
+      tags: [friends]
+      summary: Get pending friend requests
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/FriendRequest"
+
+  /friends/add:
+    post:
+      operationId: addFriend
+      tags: [friends]
+      summary: Send a friend request by ID
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/AddFriendInput"
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AuthMessage"
+        "404":
+          description: User not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AuthError"
+        "409":
+          description: Already friends or pending
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AuthError"
+
+  /friends/accept:
+    post:
+      operationId: acceptFriend
+      tags: [friends]
+      summary: Accept a friend request
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/FriendActionInput"
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AuthMessage"
+
+  /friends/reject:
+    post:
+      operationId: rejectFriend
+      tags: [friends]
+      summary: Reject a friend request
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/FriendActionInput"
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AuthMessage"
+
+  /chat/{friendId}:
+    get:
+      operationId: getMessages
+      tags: [chat]
+      summary: Get messages with a friend
+      parameters:
+        - name: friendId
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/ChatMessage"
+
+    post:
+      operationId: sendMessage
+      tags: [chat]
+      summary: Send a message to a friend
+      parameters:
+        - name: friendId
+          in: path
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/MessageInput"
+      responses:
+        "201":
+          description: Created
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ChatMessage"
+
+  /chat/ai/messages:
+    get:
+      operationId: getAiMessages
+      tags: [chat]
+      summary: Get AI chat history
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/AiMessage"
+
+  /chat/ai/send:
+    post:
+      operationId: sendAiMessage
+      tags: [chat]
+      summary: Send a message to AI and get a reply
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/MessageInput"
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AiMessage"
+
+  /groups:
+    get:
+      operationId: getGroups
+      tags: [groups]
+      summary: Get my groups
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Group"
+
+    post:
+      operationId: createGroup
+      tags: [groups]
+      summary: Create a new group
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/GroupInput"
+      responses:
+        "201":
+          description: Created
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Group"
+
+  /groups/{groupId}/messages:
+    get:
+      operationId: getGroupMessages
+      tags: [groups]
+      parameters:
+        - name: groupId
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/ChatMessage"
+
+    post:
+      operationId: sendGroupMessage
+      tags: [groups]
+      parameters:
+        - name: groupId
+          in: path
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/MessageInput"
+      responses:
+        "201":
+          description: Created
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ChatMessage"
+
+  /channels:
+    get:
+      operationId: getChannels
+      tags: [channels]
+      summary: Get all channels
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Channel"
+
+    post:
+      operationId: createChannel
+      tags: [channels]
+      summary: Create a new channel
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ChannelInput"
+      responses:
+        "201":
+          description: Created
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Channel"
+
+  /channels/{channelId}/posts:
+    get:
+      operationId: getChannelPosts
+      tags: [channels]
+      parameters:
+        - name: channelId
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/ChannelPost"
+
+    post:
+      operationId: createChannelPost
+      tags: [channels]
+      parameters:
+        - name: channelId
+          in: path
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/PostInput"
+      responses:
+        "201":
+          description: Created
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ChannelPost"
+
+  /rewards:
+    get:
+      operationId: getMyRewards
+      tags: [rewards]
+      summary: Get my rewards and points
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/RewardProfile"
+
+  /rewards/daily:
+    post:
+      operationId: claimDailyReward
+      tags: [rewards]
+      summary: Claim daily reward
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/DailyRewardResult"
+        "409":
+          description: Already claimed today
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AuthError"
+
+components:
+  schemas:
+    HealthStatus:
+      type: object
+      required: [status]
+      properties:
+        status:
+          type: string
+
+    AuthCredentials:
+      type: object
+      required: [username, password]
+      properties:
+        username:
+          type: string
+          minLength: 3
+          maxLength: 32
+        password:
+          type: string
+          minLength: 6
+
+    AuthUser:
+      type: object
+      required: [id, username, createdAt]
+      properties:
+        id:
+          type: string
+        username:
+          type: string
+        createdAt:
+          type: string
+        avatar:
+          type: ["string", "null"]
+        points:
+          type: ["integer", "null"]
+        gems:
+          type: ["integer", "null"]
+
+    AuthError:
+      type: object
+      required: [error]
+      properties:
+        error:
+          type: string
+
+    AuthMessage:
+      type: object
+      required: [message]
+      properties:
+        message:
+          type: string
+
+    Friend:
+      type: object
+      required: [id, username, createdAt]
+      properties:
+        id:
+          type: string
+        username:
+          type: string
+        avatar:
+          type: ["string", "null"]
+        createdAt:
+          type: string
+
+    FriendRequest:
+      type: object
+      required: [id, from, createdAt]
+      properties:
+        id:
+          type: string
+        from:
+          $ref: "#/components/schemas/Friend"
+        createdAt:
+          type: string
+
+    AddFriendInput:
+      type: object
+      required: [friendId]
+      properties:
+        friendId:
+          type: string
+
+    FriendActionInput:
+      type: object
+      required: [requestId]
+      properties:
+        requestId:
+          type: string
+
+    ChatMessage:
+      type: object
+      required: [id, senderId, senderName, text, createdAt]
+      properties:
+        id:
+          type: string
+        senderId:
+          type: string
+        senderName:
+          type: string
+        text:
+          type: string
+        createdAt:
+          type: string
+
+    AiMessage:
+      type: object
+      required: [id, role, text, createdAt]
+      properties:
+        id:
+          type: string
+        role:
+          type: string
+        text:
+          type: string
+        createdAt:
+          type: string
+
+    MessageInput:
+      type: object
+      required: [text]
+      properties:
+        text:
+          type: string
+
+    Group:
+      type: object
+      required: [id, name, ownerId, createdAt]
+      properties:
+        id:
+          type: string
+        name:
+          type: string
+        description:
+          type: ["string", "null"]
+        ownerId:
+          type: string
+        memberCount:
+          type: integer
+        createdAt:
+          type: string
+
+    GroupInput:
+      type: object
+      required: [name]
+      properties:
+        name:
+          type: string
+        description:
+          type: string
+
+    Channel:
+      type: object
+      required: [id, name, ownerId, createdAt]
+      properties:
+        id:
+          type: string
+        name:
+          type: string
+        description:
+          type: ["string", "null"]
+        ownerId:
+          type: string
+        subscriberCount:
+          type: integer
+        createdAt:
+          type: string
+
+    ChannelInput:
+      type: object
+      required: [name]
+      properties:
+        name:
+          type: string
+        description:
+          type: string
+
+    ChannelPost:
+      type: object
+      required: [id, channelId, authorId, authorName, text, createdAt]
+      properties:
+        id:
+          type: string
+        channelId:
+          type: string
+        authorId:
+          type: string
+        authorName:
+          type: string
+        text:
+          type: string
+        createdAt:
+          type: string
+        likes:
+          type: integer
+
+    PostInput:
+      type: object
+      required: [text]
+      properties:
+        text:
+          type: string
+
+    RewardProfile:
+      type: object
+      required: [userId, points, gems, birds, lastDailyClaim, streakDays]
+      properties:
+        userId:
+          type: string
+        points:
+          type: integer
+        gems:
+          type: integer
+        birds:
+          type: integer
+        lastDailyClaim:
+          type: ["string", "null"]
+        streakDays:
+          type: integer
+
+    DailyRewardResult:
+      type: object
+      required: [pointsEarned, gemsEarned, birdsEarned, newPoints, newGems, newBirds, streakDays, message]
+      properties:
+        pointsEarned:
+          type: integer
+        gemsEarned:
+          type: integer
+        birdsEarned:
+          type: integer
+        newPoints:
+          type: integer
+        newGems:
+          type: integer
+        newBirds:
+          type: integer
+        streakDays:
+          type: integer
+        message:
+          type: string
